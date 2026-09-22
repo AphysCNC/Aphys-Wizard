@@ -1,0 +1,12 @@
+manifest_version: 1
+image_id: linuxcnc-2.9.8-rpi4-rpi5-trixie-2026-01-21
+source_url: https://www.linuxcnc.org/iso/image_2026-01-21-raspios-lcnc-2.9.8-trixie-arm64.zip
+filename: image_2026-01-21-raspios-lcnc-2.9.8-trixie-arm64.zip
+sha256: d5eaf501c8e45425d4340efed0066a7922779faf1018a6f7b9b533fb34635979
+upstream_md5: 705b7f3c2f7b385f6cb094d05e01070e
+compression: zip
+architecture: arm64
+platforms:
+  - Raspberry Pi 4
+  - Raspberry Pi 5
+linuxcnc_version: 2.9.8

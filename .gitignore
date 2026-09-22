@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+image-work/
+output/
+.venv/
+.env
+.env.*
+*.img
+*.img.xz
+*.iso
+*.qcow2
+dist/

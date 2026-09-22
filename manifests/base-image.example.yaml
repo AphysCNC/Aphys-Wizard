@@ -1,0 +1,14 @@
+# Documentation only: this file intentionally cannot pass validation.
+manifest_version: 1
+image_id: replace-with-versioned-image-id
+source_url: https://replace-with-verified-upstream/image.img.xz
+filename: replace-with-exact-upstream-filename.img.xz
+sha256: REPLACE_WITH_64_CHARACTER_SHA256
+compression: xz
+# Optional checksum published by upstream in addition to our required SHA-256.
+# upstream_md5: 00000000000000000000000000000000
+architecture: arm64
+platforms:
+  - Raspberry Pi 4
+  - Raspberry Pi 5
+linuxcnc_version: REPLACE_WITH_INSTALLED_VERSION

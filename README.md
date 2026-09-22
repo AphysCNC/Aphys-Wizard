@@ -10,12 +10,97 @@ Aphys Wizard takes care of that. Checks for the newest version, downloads the im
 
 Internet connection required for downloading the image.
 
-## Source release 1.0.0
+## Source release 1.0.1
 
 Install Python 3.10 or newer and the dependencies in `requirements.txt` in a virtual
 environment. See [release notes](RELEASE_NOTES.md) for validation and limitations.
 Public source archives contain no prebuilt disk images or private build settings.
 The files in `manifests/` are distribution metadata for public upstream images.
+
+## Installation
+
+`requirements.txt` installs Python libraries (`requests`, `packaging`, `PyYAML`)
+and their dependencies. It does not install Python, create a virtual environment,
+or supply operating-system tools. Create your own `.venv` on each machine; do not
+copy one from another computer or operating system. The version constraints are
+minimum versions, not a lockfile for an exactly reproducible Python environment.
+
+### Linux host prerequisites
+
+The following setup commands target Debian 13. On other distributions, install
+equivalent packages using their package manager. Python 3.10 or newer is required.
+
+For running the wizard and generating configuration:
+
+```bash
+sudo apt update
+sudo apt install python3 python3-venv openssl ca-certificates
+```
+
+For building disk images on the same host, also install:
+
+```bash
+sudo apt install sudo util-linux mount coreutils xz-utils systemd
+```
+
+These commands assume your account already has sudo access. Otherwise, ask the
+host administrator to install the packages and grant the required build access.
+
+| Host dependency | Purpose |
+| --- | --- |
+| Python and `python3-venv` | Run the code and create the Python environment with pip. |
+| `openssl` | Generate password hashes using `openssl passwd -6`; required by the wizard. |
+| CA certificates and internet access | Install Python packages, resolve the official image, and download it. |
+| `sudo` | Elevate the image builder; the wizard itself runs as your normal user. |
+| `losetup`, `lsblk`, `mount`, `umount` | Attach, discover, mount and detach image partitions. |
+| `systemctl` | Configure SSH services offline inside the image. |
+| `chroot`, `xz` | Required by the current host check; image extraction/compression uses Python's standard library. |
+
+The host must allow loop devices and filesystem mounts. A container without the
+necessary device access and privileges cannot build images merely by installing
+these packages. Keep enough free disk space for the downloaded archive, extracted
+base image, a separate working image and the compressed result simultaneously.
+
+Host tools and image contents are separate: the base image must already contain
+OpenSSH server and `ssh.service` when SSH is enabled, and sudo when administrator
+access is requested. Installing these packages on the host does not add them to
+the image.
+
+### Create the Python environment and run
+
+Download and extract the source release, or clone the public repository. Open a
+terminal in the directory containing `wizard.py` and `requirements.txt`, then run:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip check
+python wizard.py
+```
+
+Create the environment and install its packages as your normal user, without
+sudo. In a new terminal, return to the project directory and run
+`source .venv/bin/activate` again. Use `deactivate` to leave the environment.
+Alternatively, `.venv/bin/python wizard.py` works without activation.
+
+For configuration generation on Windows, install Python 3.10+ and an OpenSSL
+executable supporting `passwd -6` on PATH. From PowerShell in the source directory:
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe wizard.py
+```
+
+On macOS, use the Linux-style venv commands and install a compatible OpenSSL
+executable on PATH. Disk image builds require Linux; transfer your generated YAML
+to a Linux build host and create a separate venv there. Configuration files contain
+password hashes and potentially private network settings; keep them out of Git
+and public release attachments.
+
+Background: [Python's pip/venv installation guide](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
+and [Debian's python3-venv package](https://packages.debian.org/trixie/python3-venv).
 
 ## Run the working builder stage
 
@@ -35,20 +120,20 @@ locations. The launch does not enable `--clean` or overwrite an existing final i
 For a configuration-only root filesystem archive (not a bootable image):
 
 ```bash
-python3 image_builder.py output/my-config.yaml
+.venv/bin/python image_builder.py output/my-config.yaml
 ```
 
 This writes a `.tar` under `image-work/output/`. To inspect the full image build
 plan without downloading a base image:
 
 ```bash
-python3 image_builder.py output/my-config.yaml --dry-run --check-host
+.venv/bin/python image_builder.py output/my-config.yaml --dry-run --check-host
 ```
 
 On a Linux build worker, the first end-to-end image command is:
 
 ```bash
-sudo python3 image_builder.py output/my-config.yaml \
+sudo .venv/bin/python image_builder.py output/my-config.yaml \
   --build-image --check-host
 ```
 
@@ -56,6 +141,31 @@ This preserves the extracted base image, modifies a per-job copy, automatically
 unmounts it, and produces `image-work/output/<name>.img.xz` plus a `.sha256`
 file. Software installers and base-image-specific service validation are not yet
 part of this command.
+
+Replace `output/my-config.yaml` with the actual filename printed by the wizard.
+Run these commands from the project directory. Use the explicit venv Python path
+with sudo: `sudo python3` may select the system Python and fail to find packages
+installed in `.venv`. Accepting the build prompt in the wizard already preserves
+its Python interpreter when requesting sudo.
+
+### Host checks and troubleshooting
+
+`--check-host` requires a manifest argument and prints the Linux/root status and
+availability of `losetup`, `lsblk`, `mount`, `umount`, `chroot` and `xz`. A dry run
+as your normal user can report `ready: false` because `is_root` is false; the actual
+disk build requires elevation. The check does not currently verify OpenSSL,
+`systemctl`, loop-device permissions, disk space or the contents of the base image.
+Even `ready: true` is not a guarantee that a build or the resulting image will work.
+
+| Symptom | What to check |
+| --- | --- |
+| `venv` / `ensurepip` unavailable | Install `python3-venv` for the selected interpreter, then create the environment again. |
+| `No module named yaml` or `requests` | Install requirements with `.venv/bin/python -m pip install -r requirements.txt` and run with that same Python. |
+| Imports fail only when building with sudo | Use `sudo .venv/bin/python ...`, not `sudo python3 ...`. |
+| Password hashing fails | Check that `openssl` is on PATH and supports `passwd -6`. |
+| Host check lists missing commands | Install the corresponding system packages above. |
+| Loop-device or mount permission errors | Check root privileges and host/container device access. |
+| SSH or sudo missing in the base image | Use a base image supplying the required server/unit or sudo binary; host packages do not satisfy this. |
 
 Wizard manifests use the frozen `aphys-stable` profile: the official Pi 4/5
 image and LinuxCNC 2.9.8. The matching pinned base-image manifest is selected

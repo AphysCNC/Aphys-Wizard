@@ -1,19 +1,16 @@
-# Aphys Wizard 1.0.0
+# Aphys Wizard 1.0.1
 
-Source release of the LinuxCNC image configuration wizard and offline image builder.
+Documentation update for installing and running the source release. Application
+code is unchanged from 1.0.0.
 
-- Wizard configuration and optional image build handoff.
-- Offline user/password provisioning, password-required sudo and hardware groups.
-- SSH password/key authentication and offline OpenSSH service configuration.
-- Base image interface retained; Aphys Core declarations are accepted but installation
-  remains disabled and enabling it fails before image acquisition.
-- Clean public source distribution without local profiles, generated configurations,
-  disk images, virtual environments or internal development history.
+- Step-by-step virtual environment creation and dependency installation.
+- Debian host packages, Windows/macOS configuration setup, and Linux build requirements.
+- Explicit virtual environment interpreter when building with sudo.
+- Host versus image dependencies, limitations of --check-host, and troubleshooting.
 
-Validation: 43 automated tests passed on the release source. A successful boot,
-login and machine operation on a physical Raspberry Pi have not been verified
-for this release. Core installation and managed GUI installation are not implemented.
+Validation: Bash examples passed shell syntax checks; 43 automated source tests
+passed. Physical Raspberry Pi boot, login and machine operation remain unverified.
+Core installation and managed GUI installation are not implemented.
 
-The source archives are not bootable images. Generate a private build configuration
-with the wizard and build an image on a suitable Linux host. The default account
-password is `aphys`; choose your own password during configuration.
+Source archives contain no bootable images, private configurations or virtual
+environments. Generate your own configuration and build on a suitable Linux host.
